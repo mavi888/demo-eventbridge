@@ -14,6 +14,13 @@ Resources:
       Handler: handler.hello
       Runtime: nodejs12.x
       CodeUri: ./hello
+      Policies:
+        - Statement:
+          - Sid: EventBridgePutEvents 
+            Effect: "Allow"
+            Action: 
+              - "events:PutEvents"
+            Resource: "*"
       Events:
         HelloAPI:
           Type: Api
@@ -21,7 +28,31 @@ Resources:
             RestApiId: !Ref MyApi
             Path: /hello
             Method: GET
+
+  ByeFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: handler.bye
+      Runtime: nodejs12.x
+      CodeUri: ./bye      
   
+  ByeFunctionInvokePermission:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      Action: 'lambda:InvokeFunction'
+      FunctionName: !Ref ByeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt MyEventsRule.Arn
+
+  MyEventsRule:
+    Type: 'AWS::Events::Rule'
+    Properties:
+      Description: "Say Bye"
+      EventPattern: { "source": ["say.bye"] }
+      Targets:
+        - Arn: !GetAtt ByeFunction.Arn
+          Id: "RuleId"
+
 Outputs:
   Region:
     Description: "Region"
