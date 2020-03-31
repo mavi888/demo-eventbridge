@@ -1,3 +1,4 @@
-packaged.yaml
-.aws-sam/
-samconfig.toml
+orderManager/samconfig.toml
+orderManager/.aws-sam/
+pizzaHat/samconfig.toml
+thaiLand/samconfig.toml

@@ -1,0 +1,58 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+
+Resources:
+
+  OrdersApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: dev
+    
+  PutOrderFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: handler.putOrder
+      Runtime: nodejs12.x
+      CodeUri: .
+      Policies:
+        - Statement:
+          - Sid: EventBridgePutEvents 
+            Effect: "Allow"
+            Action: 
+              - "events:PutEvents"
+            Resource: "*"
+      Events:
+        PutOrderAPI:
+          Type: Api
+          Properties:
+            RestApiId: !Ref OrdersApi
+            Path: /order
+            Method: POST
+
+  NotValidRestaurantFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: handler.notValidRestaurant
+      Runtime: nodejs12.x
+      CodeUri: .
+      Events:
+        Trigger:
+          Type: CloudWatchEvent 
+          Properties:
+            Pattern:
+              source:
+                - custom.orderManager
+              detail-type:
+                - order                
+              detail:
+                restaurantName:
+                  - "anything-but": ["pizzaHat", "thaiLand"]
+
+Outputs:
+  ApiId:
+    Description: "API ID"
+    Value: !Ref OrdersApi
+
+  ApiUrl:
+    Description: "API endpoint URL for Prod environment"
+    Value: !Sub 'https://${OrdersApi}.execute-api.${AWS::Region}.amazonaws.com/dev/'
